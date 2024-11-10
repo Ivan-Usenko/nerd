@@ -90,6 +90,7 @@ fn start_project(params: &Vec<String>) -> Result<String, String> {
         \n\
         int main() {\n\
         \tstd::cout << \"Hello, World!\" << std::endl;\n\
+        \treturn 0;\n\
         }".to_string();
 
     let cmake_file_content = format!("\
