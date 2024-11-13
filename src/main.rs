@@ -105,8 +105,11 @@ fn start_project(params: &Vec<String>) -> Result<String, String> {
         add_executable(${{PROJECT_NAME}} src/main.cpp)",
         project_name);
 
+    let gitignore_file_content = "build".to_string();
+
     let _ = fs::write(source_dir.join("main.cpp"), cpp_file_content);
     let _ = fs::write(project_dir.join("CMakeLists.txt"), cmake_file_content);
+    let _ = fs::write(project_dir.join(".gitignore"), gitignore_file_content);
 
     info_message("Project files generated successfully.");
     info_message("Generating build files...");
@@ -134,6 +137,31 @@ fn start_project(params: &Vec<String>) -> Result<String, String> {
     }
     
     info_message("Build files generated successfully.");
+    info_message("Initializing git...");
+
+    let result = std::process::Command::new("git")
+        .arg("-C")
+        .arg(project_dir.to_str().unwrap())
+        .arg("init")
+        .output();
+
+    let output = match result {
+        Ok(o) => o,
+        Err(e) => {
+            clean_up(&project_dir);
+            return Err(format!("Failed to init git: {}", match e.kind() {
+                ErrorKind::NotFound => "Git not found".to_string(),
+                _ => e.to_string(),
+            }))
+        },
+    };
+
+    if !output.status.success() {
+        clean_up(&project_dir);
+        return Err(format!("Failed to init git: Git error.\n{}", String::from_utf8(output.stderr).unwrap().trim()));
+    }
+
+    info_message("Git initialized.");
 
     Ok(format!("Project '{}' created successfully!", project_name))
 }
